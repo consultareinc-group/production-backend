@@ -73,7 +73,6 @@ class ProductionPlanController extends Controller {
         'start_date_and_time',
         'end_date_and_time',
         'customer_name',
-        'is_deleted',
         'status',
         'is_archived',
     ];
@@ -122,7 +121,7 @@ class ProductionPlanController extends Controller {
     }
 
 
-    public function getPlan($id = null) {
+    public function getPlan(Request $request, $id = null) {
         try {
             // Fetch by ID
             if ($id) {
@@ -168,6 +167,32 @@ class ProductionPlanController extends Controller {
                 );
 
                 return $this->response->buildApiResponse($query_result, $response_columns);
+            }
+
+            // Pagination
+            if ($request->has('offset')) {
+                $query_result = $this->db->table($this->planning_table)
+                    ->select($this->response_columns)
+                    ->where('is_archived', '=', 0)
+                    ->offset(trim($request->query('offset')), "")
+                    ->limit(1000)
+                    ->reorder('id', 'desc')
+                    ->get();
+                return $this->response->buildApiResponse($query_result, $this->response_columns);
+            }
+
+            // Table Search
+            if ($request->has('search_keyword')) {
+                $search = $request->search_keyword;
+                $query_result = $this->db->table($this->planning_table)
+                    ->where('batch_number', 'like', "%{$search}%")
+                    ->orWhere('product_id', 'like', "%{$search}%")
+                    ->orWhere('quantity', 'like', "%{$search}%")
+                    ->orWhere('start_date_and_time', 'like', "%{$search}%")
+                    ->orWhere('end_date_and_time', 'like', "%{$search}%")
+                    ->orWhere('customer_name', 'like', "%{$search}%")
+                    ->get();
+                return $this->response->buildApiResponse($query_result, $this->response_columns);
             }
 
             // Fetch all production plans (when no ID is provided)
