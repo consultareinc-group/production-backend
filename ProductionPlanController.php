@@ -167,7 +167,7 @@ class ProductionPlanController extends Controller {
                     ['material_details', 'activity_logs']
                 );
 
-                return $this->response->buildApiResponse([$query_result[0]], $response_columns);
+                return $this->response->buildApiResponse($query_result, $response_columns);
             }
 
             // Fetch all production plans (when no ID is provided)
