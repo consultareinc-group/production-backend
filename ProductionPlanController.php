@@ -154,6 +154,7 @@ class ProductionPlanController extends Controller {
                 $activity_logs = $this->db->table($this->activity_logs_table)
                     ->where("{$this->activity_logs_table}.production_plan_id", $id)
                     ->select("id", "production_plan_id", "personnel_id", "action", "date_and_time")
+                    ->orderBy('date_and_time', 'desc')
                     ->get();
 
                 // Add related data to the result
