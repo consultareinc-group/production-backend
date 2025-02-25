@@ -94,7 +94,7 @@ class ApiController extends Controller
         "preoperation_verifications_inspections",
         "inspection",
         "sop_reference",
-        "tbl_povi.sop_reference_generated_filename"
+        "sop_reference_generated_filename"
         
     ];
 
@@ -148,30 +148,31 @@ class ApiController extends Controller
             if ($request->has('offset')) {
                 
                 $query_result = $this->db->select("
-                                            SELECT 
-                                                tbl_pov.id,
-                                                tbl_pp.batch_number,
-                                                tbl_pov.is_archived,
-                                                tbl_povi.inspection,
-                                                tbl_povi.status,
-                                                tbl_povi.sop_reference,
-                                                tbl_povi.sop_reference_generated_filename,
-                                            FROM tbl_production_planning AS tbl_pp
-                                            INNER JOIN tbl_preoperation_verifications AS tbl_pov
-                                                ON tbl_pov.production_id = tbl_pp.id
-                                            LEFT JOIN (
-                                                SELECT *
-                                                FROM tbl_preoperation_verifications_inspections AS sub_povi
-                                                WHERE sub_povi.id = (
-                                                    SELECT MIN(inner_povi.id)
-                                                    FROM tbl_preoperation_verifications_inspections AS inner_povi
-                                                    WHERE inner_povi.preoperation_id = sub_povi.preoperation_id
-                                                )
-                                            ) AS tbl_povi
-                                                ON tbl_povi.preoperation_id = tbl_pov.id
-                                            ORDER BY tbl_pov.id DESC
-                                            LIMIT 1000 OFFSET ?
+                                                SELECT 
+                                                    tbl_pov.id,
+                                                    tbl_pp.batch_number,
+                                                    tbl_pov.is_archived,
+                                                    tbl_povi.inspection,
+                                                    tbl_povi.status,
+                                                    tbl_povi.sop_reference,
+                                                    tbl_povi.sop_reference_generated_filename
+                                                FROM tbl_production_planning AS tbl_pp
+                                                INNER JOIN tbl_preoperation_verifications AS tbl_pov
+                                                    ON tbl_pov.production_id = tbl_pp.id
+                                                LEFT JOIN (
+                                                    SELECT *
+                                                    FROM tbl_preoperation_verifications_inspections AS sub_povi
+                                                    WHERE sub_povi.id = (
+                                                        SELECT MIN(inner_povi.id)
+                                                        FROM tbl_preoperation_verifications_inspections AS inner_povi
+                                                        WHERE inner_povi.preoperation_id = sub_povi.preoperation_id
+                                                    )
+                                                ) AS tbl_povi
+                                                    ON tbl_povi.preoperation_id = tbl_pov.id
+                                                ORDER BY tbl_pov.id DESC
+                                                LIMIT 1000 OFFSET ?
                                             ", [trim($request->query('offset', 0), '"')]);
+
 
 
 
@@ -186,37 +187,37 @@ class ApiController extends Controller
                 $search_keyword = $request->query('search_keyword', ''); // Default to an empty string if no keyword is provided
 
                 $query_result = $this->db->select("
-                                        SELECT 
-                                            tbl_pov.id,
-                                            tbl_pp.batch_number,
-                                            tbl_pov.is_archived,
-                                            tbl_povi.inspection,
-                                            tbl_povi.status,
-                                            tbl_povi.sop_reference,
-                                            tbl_povi.sop_reference_generated_filename,
-                                        FROM tbl_production_planning AS tbl_pp
-                                        INNER JOIN tbl_preoperation_verifications AS tbl_pov
-                                            ON tbl_pov.production_id = tbl_pp.id
-                                        LEFT JOIN (
-                                            SELECT *
-                                            FROM tbl_preoperation_verifications_inspections AS sub_povi
-                                            WHERE sub_povi.id = (
-                                                SELECT MIN(inner_povi.id)
-                                                FROM tbl_preoperation_verifications_inspections AS inner_povi
-                                                WHERE inner_povi.preoperation_id = sub_povi.preoperation_id
-                                            )
-                                        ) AS tbl_povi
-                                            ON tbl_povi.preoperation_id = tbl_pov.id
-                                        WHERE tbl_pp.batch_number LIKE ? 
-                                            OR tbl_povi.inspection LIKE ? 
-                                            OR tbl_povi.sop_reference LIKE ?
-                                        ORDER BY tbl_pov.id DESC
-                                        LIMIT 1000
-                                    ", [
-                                        "%$search_keyword%", // For batch_number
-                                        "%$search_keyword%", // For inspection
-                                        "%$search_keyword%"  // For sop_reference
-                                    ]);
+                                                SELECT 
+                                                    tbl_pov.id,
+                                                    tbl_pp.batch_number,
+                                                    tbl_pov.is_archived,
+                                                    tbl_povi.inspection,
+                                                    tbl_povi.status,
+                                                    tbl_povi.sop_reference,
+                                                    tbl_povi.sop_reference_generated_filename
+                                                FROM tbl_production_planning AS tbl_pp
+                                                INNER JOIN tbl_preoperation_verifications AS tbl_pov
+                                                    ON tbl_pov.production_id = tbl_pp.id
+                                                LEFT JOIN (
+                                                    SELECT *
+                                                    FROM tbl_preoperation_verifications_inspections AS sub_povi
+                                                    WHERE sub_povi.id = (
+                                                        SELECT MIN(inner_povi.id)
+                                                        FROM tbl_preoperation_verifications_inspections AS inner_povi
+                                                        WHERE inner_povi.preoperation_id = sub_povi.preoperation_id
+                                                    )
+                                                ) AS tbl_povi
+                                                    ON tbl_povi.preoperation_id = tbl_pov.id
+                                                WHERE tbl_pp.batch_number LIKE ? 
+                                                    OR tbl_povi.inspection LIKE ? 
+                                                    OR tbl_povi.sop_reference LIKE ?
+                                                ORDER BY tbl_pov.id DESC
+                                                LIMIT 1000
+                                            ", [
+                                                "%$search_keyword%", // For batch_number
+                                                "%$search_keyword%", // For inspection
+                                                "%$search_keyword%"  // For sop_reference
+                                            ]);
 
                 
                 
