@@ -175,7 +175,6 @@ class ApiController extends Controller
 
 
 
-
                 
                 return $this->response->buildApiResponse($query_result,$this->response_column);
                 
@@ -187,6 +186,7 @@ class ApiController extends Controller
                 $search_keyword = $request->query('search_keyword', ''); // Default to an empty string if no keyword is provided
 
                 $query_result = $this->db->select("
+
                                                 SELECT 
                                                     tbl_pov.id,
                                                     tbl_pp.batch_number,
@@ -218,6 +218,7 @@ class ApiController extends Controller
                                                 "%$search_keyword%", // For inspection
                                                 "%$search_keyword%"  // For sop_reference
                                             ]);
+
 
                 
                 
