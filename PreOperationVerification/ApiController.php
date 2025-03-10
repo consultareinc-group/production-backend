@@ -97,7 +97,8 @@ class ApiController extends Controller
         "preoperation_verifications_inspections",
         "inspection",
         "sop_reference",
-        "sop_reference_generated_filename"
+        "sop_reference_generated_filename",
+        "personnel_name"
         
     ];
 
@@ -111,7 +112,8 @@ class ApiController extends Controller
     protected $table = 'preoperation_verifications';
     protected $table_production = 'production_planning';
     protected $table_inspection = 'preoperation_verifications_inspections';
-    // protected $table_personnel = ''
+    protected $table_personnel = 'user_information';
+
 
 
 
@@ -251,9 +253,29 @@ class ApiController extends Controller
                 return $this->response->buildApiResponse($query_result, $this->response_column);
             }
 
-            // if($request->has('personnel_name')){
-            //     $query_result = $this->account->table()
-            // }
+            if($request->has('personnel_name')){
+                $personnel_name_keyword = $request->query('personnel_name', '');
+
+                $query_result = $this->account->table($this->table_personnel)
+                                              ->selectRaw("
+                                                  TRIM(CONCAT(
+                                                      first_name, 
+                                                      IF(middle_name IS NOT NULL AND middle_name != '', CONCAT(' ', middle_name), ''), 
+                                                      ' ', last_name, 
+                                                      IF(suffix_name IS NOT NULL AND suffix_name != '', CONCAT(' ', suffix_name), '')
+                                                 )) AS personnel_name
+                                              ")
+                                              ->whereRaw("
+                                                  TRIM(CONCAT(
+                                                      first_name, 
+                                                      IF(middle_name IS NOT NULL AND middle_name != '', CONCAT(' ', middle_name), ''), 
+                                                      ' ', last_name, 
+                                                      IF(suffix_name IS NOT NULL AND suffix_name != '', CONCAT(' ', suffix_name), '')
+                                                  )) LIKE ?
+                                              ", ["%$personnel_name_keyword%"])
+                                              ->get();
+                return $this->response->buildApiResponse($query_result, $this->response_column);
+            }
 
 
         }
