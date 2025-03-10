@@ -14,8 +14,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\ResponseHelper;
 use App\Helpers\ValidationHelper;
+use App\Helpers\UserInfoHelper;
 use App\Helpers\FileHelper;
 use DateTime;
+
 
 /**
  * 
@@ -40,20 +42,21 @@ class ApiController extends Controller
     protected $validation;
     protected $db;
     protected $file;
+    protected $user_info;
+    protected $account;
     public function __construct(Request $request)
     {
         $this->file = new FileHelper();
         $this->response = new ResponseHelper($request);
         $this->validation = new ValidationHelper($request);
-
+        $this->user_info = new UserInfoHelper();
         /**
          * 
          *  Rename system_database_connection based on preferred database on database.php
          * 
         */
         $this->db = DB::connection("production_database_connection");
-
-        
+        $this->account = DB::connection("accounts_connection");
     }
 
      /**
@@ -333,6 +336,42 @@ class ApiController extends Controller
     }
 
     public function put(Request $request, $id){
+
+        $for_archived = ['is_archived', 'id'];
+
+        $request_keys = array_keys($request->all());
+        sort($request_keys); 
+        sort($for_archived);
+
+        $edit_request = $request->all();
+
+        if ($request_keys === $for_archived) {
+            
+            if($id == 0){
+                return $this->response->errorResponse("Id cannot be zero");
+            }
+
+            if($edit_request['id'] != $id){
+                return $this->response->errorResponse("Ids Does not match");
+            }
+
+
+            $this->db->beginTransaction();
+
+            if($this->db->table($this->table)->where('id', $id)->where($edit_request)->exists()){
+                $this->db->rollback();
+                return $this->response->errorResponse("Can't Update. Data have Similar Status");
+            }   
+
+            if(!$this->db->table($this->table)->where("id",$id)->update($edit_request)){
+                $this->db->rollback();
+                return $this->response->errorResponse("Can't Update Data");
+            }  
+
+            $this->db->commit();
+            return $this->response->successResponse("Data has been archived");
+
+        }
 
         $payload = $this->validation->validateRequest($request, $this->accepted_parameters, $this->required_fields);
 
