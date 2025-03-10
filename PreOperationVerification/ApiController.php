@@ -111,6 +111,7 @@ class ApiController extends Controller
     protected $table = 'preoperation_verifications';
     protected $table_production = 'production_planning';
     protected $table_inspection = 'preoperation_verifications_inspections';
+    // protected $table_personnel = ''
 
 
 
@@ -172,6 +173,7 @@ class ApiController extends Controller
                                                     )
                                                 ) AS tbl_povi
                                                     ON tbl_povi.preoperation_id = tbl_pov.id
+                                                    WHERE tbl_pov.is_archived = 0
                                                 ORDER BY tbl_pov.id DESC
                                                 LIMIT 1000 OFFSET ?
                                             ", [trim($request->query('offset', 0), '"')]);
@@ -189,7 +191,6 @@ class ApiController extends Controller
                 $search_keyword = $request->query('search_keyword', ''); // Default to an empty string if no keyword is provided
 
                 $query_result = $this->db->select("
-
                                                 SELECT 
                                                     tbl_pov.id,
                                                     tbl_pp.batch_number,
@@ -211,9 +212,12 @@ class ApiController extends Controller
                                                     )
                                                 ) AS tbl_povi
                                                     ON tbl_povi.preoperation_id = tbl_pov.id
-                                                WHERE tbl_pp.batch_number LIKE ? 
-                                                    OR tbl_povi.inspection LIKE ? 
-                                                    OR tbl_povi.sop_reference LIKE ?
+                                                WHERE tbl_pov.is_archived = 0
+                                                    AND (
+                                                        tbl_pp.batch_number LIKE ? 
+                                                        OR tbl_povi.inspection LIKE ? 
+                                                        OR tbl_povi.sop_reference LIKE ?
+                                                    )
                                                 ORDER BY tbl_pov.id DESC
                                                 LIMIT 1000
                                             ", [
@@ -227,6 +231,31 @@ class ApiController extends Controller
                 
                 return $this->response->buildApiResponse($query_result,$this->response_column);    
             }
+
+
+            if($request->has('batch_number')){
+                $batch_number_keyword = $request->query('batch_number', '');
+
+                $query_result = $this->db->table($this->table_production)
+                                         ->select(
+                                                'id',
+                                                'batch_number'
+                                         )
+                                         ->where(
+                                                'batch_number',
+                                                'LIKE',
+                                                '%' . $batch_number_keyword . '%'
+                                         )
+                                         ->get();
+
+                return $this->response->buildApiResponse($query_result, $this->response_column);
+            }
+
+            // if($request->has('personnel_name')){
+            //     $query_result = $this->account->table()
+            // }
+
+
         }
         catch(QueryException $e){
             return $this->response->errorResponse($e);
