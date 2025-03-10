@@ -257,6 +257,9 @@ class ApiController extends Controller
                 $personnel_name_keyword = $request->query('personnel_name', '');
 
                 $query_result = $this->account->table($this->table_personnel)
+                                              ->select(
+                                                 'id' // Add ID column
+                                              )
                                               ->selectRaw("
                                                   TRIM(CONCAT(
                                                       first_name, 
