@@ -362,6 +362,13 @@ class ApiController extends Controller
 
             if($this->db->table($this->table_inspection)->insert($inspection_data)){
 
+                foreach($save_files as $s_f){
+                    if(!$this->file->checkFile($s_f['sop_reference'])){
+                        $this->db->rollback();
+                        return $this->response->errorResponse('Invalid File Format');
+                    }
+                }
+
                 foreach($save_files as $sf){
                       if(!$this->file->saveFile($sf['sop_reference'], $sf['sop_reference_generated_filename'], $this)){
                         return $this->response->errorResponse("Cant Upload File");
@@ -458,6 +465,17 @@ class ApiController extends Controller
 
 
             $get_inspection_data = $this->db->table($this->table_inspection)->where('preoperation_id',$id)->get();
+
+            if($payload['preoperation_verifications_inspections']){
+                foreach($payload['preoperation_verifications_inspections'] as $for_file){
+                    if(!$this->file->checkFile($for_file['sop_reference'])){
+                        $this->db->rollback();
+                        return $this->response->errorResponse('Invalid File Format');
+                    }
+                }
+
+            }
+
             
             if(!empty($get_inspection_data)){
                 foreach($get_inspection_data as $inspection){
