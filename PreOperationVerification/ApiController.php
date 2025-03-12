@@ -371,6 +371,7 @@ class ApiController extends Controller
 
                 foreach($save_files as $sf){
                       if(!$this->file->saveFile($sf['sop_reference'], $sf['sop_reference_generated_filename'], $this)){
+                        $this->db->rollback();
                         return $this->response->errorResponse("Cant Upload File");
                     }
                 }
