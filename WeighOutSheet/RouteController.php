@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\ProductionManagementSystem\PreOperationVerification;
+namespace App\Http\Controllers\ProductionManagementSystem\WeighOutSheet;
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Controller;
@@ -13,7 +13,7 @@ class RouteController extends Controller
     public static function moduleRoute()
     {
         //change  module-name based on your desired path
-        Route::prefix('preoperation-verification')->group(function () {
+        Route::prefix('weigh-out-sheet')->group(function () {
             Route::get('/{id?}', [ApiController::class, 'get']); 
             Route::post('/', [ApiController::class, 'post']); 
             Route::post('/{id}', [ApiController::class, 'put']); 
