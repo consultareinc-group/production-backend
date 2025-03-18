@@ -196,11 +196,11 @@ class ApiController extends Controller
                                          ->select(
                                             'wo.id',
                                             'pp.batch_number',
-                                            $this->db->raw("GROUP_CONCAT(sm.material_id ORDER BY sm.id SEPARATOR ', ') as material_code"),
-                                            $this->db->raw("GROUP_CONCAT(md.description ORDER BY md.id SEPARATOR ', ') as component_description"),
-                                            $this->db->raw("GROUP_CONCAT(md.quantity_required ORDER BY md.id SEPARATOR ', ') as quantity_required"),
-                                            $this->db->raw("GROUP_CONCAT(md.quantity_weighed ORDER BY md.id SEPARATOR ', ') as quantity_weighed"),
-                                            $this->db->raw("GROUP_CONCAT(md.tolerance ORDER BY md.id SEPARATOR ', ') as tolerance"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_supplier_material.material_id ORDER BY tbl_supplier_material.id SEPARATOR ', ') as material_code"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_material_details.description ORDER BY tbl_material_details.id SEPARATOR ', ') as component_description"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_material_details.quantity_required ORDER BY tbl_material_details.id SEPARATOR ', ') as quantity_required"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_material_details.quantity_weighed ORDER BY tbl_material_details.id SEPARATOR ', ') as quantity_weighed"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_material_details.tolerance ORDER BY tbl_material_details.id SEPARATOR ', ') as tolerance"),
                                             'wo.status',
                                             'wo.is_archived'
                                          )
@@ -230,18 +230,18 @@ class ApiController extends Controller
                                          ->select(
                                             'wo.id',
                                             'pp.batch_number',
-                                            $this->db->raw("GROUP_CONCAT(sm.material_id ORDER BY sm.id SEPARATOR ', ') as material_code"),
-                                            $this->db->raw("GROUP_CONCAT(md.description ORDER BY md.id SEPARATOR ', ') as component_description"),
-                                            $this->db->raw("GROUP_CONCAT(md.quantity_required ORDER BY md.id SEPARATOR ', ') as quantity_required"),
-                                            $this->db->raw("GROUP_CONCAT(md.quantity_weighed ORDER BY md.id SEPARATOR ', ') as quantity_weighed"),
-                                            $this->db->raw("GROUP_CONCAT(md.tolerance ORDER BY md.id SEPARATOR ', ') as tolerance"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_supplier_material.material_id ORDER BY tbl_supplier_material.id SEPARATOR ', ') as material_code"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_material_details.description ORDER BY tbl_material_details.id SEPARATOR ', ') as component_description"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_material_details.quantity_required ORDER BY tbl_material_details.id SEPARATOR ', ') as quantity_required"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_material_details.quantity_weighed ORDER BY tbl_material_details.id SEPARATOR ', ') as quantity_weighed"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_material_details.tolerance ORDER BY tbl_material_details.id SEPARATOR ', ') as tolerance"),
                                             'wo.status',
                                             'wo.is_archived'
                                          )
                                          ->havingRaw("
                                             pp.batch_number LIKE ? 
                                             OR material_code LIKE ? 
-                                        ", ["%$search%", "%$search%"]) // Search keyword applied
+                                        ", ["%$search_keyword%", "%$search_keyword%"]) // Search keyword applied
                                          ->get();
 
 
@@ -293,7 +293,7 @@ class ApiController extends Controller
 
             if(!$payload['id']){
                 $this->db->rollback();
-                return $this->rseponse->errorResponse("Can't Save Data");
+                return $this->response->errorResponse("Can't Save Data");
             }
             else{
                 $activity_log = [
@@ -483,7 +483,7 @@ class ApiController extends Controller
 
             if(!$payload['id']){
                 $this->db->rollback();
-                return $this->rseponse->errorResponse("Can't Save Data");
+                return $this->response->errorResponse("Can't Save Data");
             }
             else{
 
@@ -556,70 +556,8 @@ class ApiController extends Controller
     }
 
     public function delete($id){
-
-        //check if the id is numeric and has value
-        if (empty($id) && !is_numeric($id)) {
-            return $this->response->errorResponse("Invalid Request");
-        }
-
-        $payload = $payload->all();
-        if(!isset($payload['id']) || empty($payload['id']) || !is_numeric($payload['id'])){
-            //if id is not set in $request, empty or non numeric
-            return $this->response->invalidParameterResponse();
-        }
-        if($payload['id'] != $id){
-            //if ids doesnt match
-            return $this->response->errorResponse("ID doesn't match!");
-        }
-
-        try{
-
-             /**
-             * 
-             * 
-             * insert your code here
-             * 
-             * can remove this comment after
-             * 
-             * 
-             * */
-
-        }
-        catch(QueryException $e){
-            return $this->response->errorResponse($e);
-        }
-        catch(Exception $e) {
-            return $this->response->errorResponse($e);
-        }
     }
 
     public function upload(Request $request, $id){
-
-         /**
-         * 
-         * start with other validations here
-         * 
-         * */
-
-
-        try{
-
-             /**
-             * 
-             * 
-             * insert your code here
-             * 
-             * can remove this comment after
-             * 
-             * 
-             * */
-
-        }
-        catch(QueryException $e){
-            return $this->response->errorResponse($e);
-        }
-        catch(Exception $e) {
-            return $this->response->errorResponse($e);
-        }
     }
 }
