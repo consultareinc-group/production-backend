@@ -97,7 +97,9 @@ class ApiController extends Controller
         "status",
         "is_archived",
         "material_code",
-        "component_description"
+        "component_description",
+        "quantity_required",
+        "quantity_weighed"
     ];
 
     /**
@@ -192,15 +194,15 @@ class ApiController extends Controller
                 $query_result = $this->db->table($this->table . " as wo")
                                          ->leftJoin($this->table_production . " as pp", "wo.production_id", "=", "pp.id")
                                          ->leftJoin($this->table_material_details . " as md", "wo.id", "=", "md.weigh_out_id")
-                                         ->leftJoin($this->table_supplier_material . " as sm", "sm.id", "=", "md.material_id")
+                                         ->leftJoin($this->table_supplier_material . " as sm", "md.material_id", "=", "sm.id")
                                          ->select(
                                             'wo.id',
                                             'pp.batch_number',
-                                            $this->db->raw("GROUP_CONCAT(tbl_supplier_material.material_id ORDER BY tbl_supplier_material.id SEPARATOR ', ') as material_code"),
-                                            $this->db->raw("GROUP_CONCAT(tbl_material_details.description ORDER BY tbl_material_details.id SEPARATOR ', ') as component_description"),
-                                            $this->db->raw("GROUP_CONCAT(tbl_material_details.quantity_required ORDER BY tbl_material_details.id SEPARATOR ', ') as quantity_required"),
-                                            $this->db->raw("GROUP_CONCAT(tbl_material_details.quantity_weighed ORDER BY tbl_material_details.id SEPARATOR ', ') as quantity_weighed"),
-                                            $this->db->raw("GROUP_CONCAT(tbl_material_details.tolerance ORDER BY tbl_material_details.id SEPARATOR ', ') as tolerance"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_sm.material_id ORDER BY tbl_sm.id SEPARATOR ', ') as material_code"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_md.description ORDER BY tbl_md.id SEPARATOR ', ') as component_description"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_md.quantity_required ORDER BY tbl_md.id SEPARATOR ', ') as quantity_required"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_md.quantity_weighed ORDER BY tbl_md.id SEPARATOR ', ') as quantity_weighed"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_md.tolerance ORDER BY tbl_md.id SEPARATOR ', ') as tolerance"),
                                             'wo.status',
                                             'wo.is_archived'
                                          )
@@ -226,15 +228,15 @@ class ApiController extends Controller
                 $query_result = $this->db->table($this->table . " as wo")
                                          ->leftJoin($this->table_production . " as pp", "wo.production_id", "=", "pp.id")
                                          ->leftJoin($this->table_material_details . " as md", "wo.id", "=", "md.weigh_out_id")
-                                         ->leftJoin($this->table_supplier_material . " as sm", "sm.id", "=", "md.material_id")
+                                         ->leftJoin($this->table_supplier_material . " as sm", "md.material_id", "=", "sm.id")
                                          ->select(
                                             'wo.id',
                                             'pp.batch_number',
-                                            $this->db->raw("GROUP_CONCAT(tbl_supplier_material.material_id ORDER BY tbl_supplier_material.id SEPARATOR ', ') as material_code"),
-                                            $this->db->raw("GROUP_CONCAT(tbl_material_details.description ORDER BY tbl_material_details.id SEPARATOR ', ') as component_description"),
-                                            $this->db->raw("GROUP_CONCAT(tbl_material_details.quantity_required ORDER BY tbl_material_details.id SEPARATOR ', ') as quantity_required"),
-                                            $this->db->raw("GROUP_CONCAT(tbl_material_details.quantity_weighed ORDER BY tbl_material_details.id SEPARATOR ', ') as quantity_weighed"),
-                                            $this->db->raw("GROUP_CONCAT(tbl_material_details.tolerance ORDER BY tbl_material_details.id SEPARATOR ', ') as tolerance"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_sm.material_id ORDER BY tbl_sm.id SEPARATOR ', ') as material_code"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_md.description ORDER BY tbl_md.id SEPARATOR ', ') as component_description"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_md.quantity_required ORDER BY tbl_md.id SEPARATOR ', ') as quantity_required"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_md.quantity_weighed ORDER BY tbl_md.id SEPARATOR ', ') as quantity_weighed"),
+                                            $this->db->raw("GROUP_CONCAT(tbl_md.tolerance ORDER BY tbl_md.id SEPARATOR ', ') as tolerance"),
                                             'wo.status',
                                             'wo.is_archived'
                                          )
