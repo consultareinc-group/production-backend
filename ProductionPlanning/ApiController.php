@@ -160,39 +160,54 @@ class ApiController extends Controller {
                     ->offset($offset)
                     ->limit($limit)
                     ->get();
-            } else if ($request->has('search_keyword') || $request->has('start_date_and_time') || $request->has('end_date_and_time')) {
-                if ($request->has('search_keyword') && $request->has('start_date_and_time') && $request->has('end_date_and_time')) {
-                    $search_keyword = $request->query('search_keyword', '');
-                    $start_date_and_time = $request->query('start_date_and_time', '');
-                    $end_date_and_time = $request->query('end_date_and_time', '');
+            } else if ($request->has('search_keyword') || $request->has('start_date_and_time') || $request->has('end_date_and_time') || $request->has('status')) {
+                $search_keyword = $request->query('search_keyword', '');
+                $start_date_and_time = $request->query('start_date_and_time', '');
+                $end_date_and_time = $request->query('end_date_and_time', '');
+                $status = $request->query('status', '');
 
-                    $query_result = $this->db->table($this->table . " as pp")
-                        ->select(
-                            'pp.id',
-                            'pp.batch_number',
-                            'pp.product_id',
-                            'p.name',
-                            'pp.quantity',
-                            'pp.start_date_and_time',
-                            'pp.end_date_and_time',
-                            'pp.customer_name',
-                            'pp.status',
-                            'pp.is_archived'
-                        )
-                        ->leftJoin($this->table_products . ' as p', 'pp.product_id', '=', 'p.id')
-                        ->where('pp.batch_number', 'like', '%' . $search_keyword . '%')
-                        ->where(function ($query) use ($start_date_and_time, $end_date_and_time) {
-                            $query->whereBetween('pp.start_date_and_time', [$start_date_and_time, $end_date_and_time])
-                                ->orWhereBetween('pp.end_date_and_time', [$start_date_and_time, $end_date_and_time])
-                                ->orWhere(function ($query) use ($start_date_and_time, $end_date_and_time) {
-                                    $query->where('pp.start_date_and_time', '<=', $start_date_and_time)
-                                        ->where('pp.end_date_and_time', '>=', $end_date_and_time);
-                                });
-                        })
-                        ->get();
-                } else {
-                    return $this->response->errorResponse("search_keyword, start_date_and_time, and end_date_and_time must exist together");
+                $query_result = $this->db->table($this->table . " as pp")
+                    ->select(
+                        'pp.id',
+                        'pp.batch_number',
+                        'pp.product_id',
+                        'p.name',
+                        'pp.quantity',
+                        'pp.start_date_and_time',
+                        'pp.end_date_and_time',
+                        'pp.customer_name',
+                        'pp.status',
+                        'pp.is_archived'
+                    )
+                    ->leftJoin($this->table_products . ' as p', 'pp.product_id', '=', 'p.id')
+                    ->where('pp.is_archived', 0);
+
+                if (!empty($search_keyword)) {
+                    $query_result->where(function ($query) use ($search_keyword) {
+                        $query->where('pp.batch_number', 'like', '%' . $search_keyword . '%')
+                            ->orWhere('p.name', 'like', '%' . $search_keyword . '%')
+                            ->orWhere('pp.quantity', 'like', '%' . $search_keyword . '%')
+                            ->orWhere('pp.customer_name', 'like', '%' . $search_keyword . '%')
+                            ->orWhere('pp.status', 'like', '%' . $search_keyword . '%');
+                    });
                 }
+
+                if (!empty($start_date_and_time) && !empty($end_date_and_time)) {
+                    $query_result->where(function ($query) use ($start_date_and_time, $end_date_and_time) {
+                        $query->whereBetween('pp.start_date_and_time', [$start_date_and_time, $end_date_and_time])
+                            ->orWhereBetween('pp.end_date_and_time', [$start_date_and_time, $end_date_and_time])
+                            ->orWhere(function ($query) use ($start_date_and_time, $end_date_and_time) {
+                                $query->where('pp.start_date_and_time', '<=', $start_date_and_time)
+                                    ->where('pp.end_date_and_time', '>=', $end_date_and_time);
+                            });
+                    });
+                }
+
+                if ($status !== '') {
+                    $query_result->where('pp.status', $status);
+                }
+
+                $query_result = $query_result->orderBy('pp.id', 'desc')->get();
             } else {
                 $query_result = $this->db->table($this->table . " as pp")
                     ->select(
