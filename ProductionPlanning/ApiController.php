@@ -160,14 +160,46 @@ class ApiController extends Controller {
                     ->offset($offset)
                     ->limit($limit)
                     ->get();
-            } else if ($request->has('search_keyword')) {
-                $search = $request->input('search_keyword');
+            } else if ($request->has('search_keyword') || $request->has('start_date_and_time') || $request->has('end_date_and_time')) {
+                if ($request->has('search_keyword') && $request->has('start_date_and_time') && $request->has('end_date_and_time')) {
+                    $search_keyword = $request->query('search_keyword', '');
+                    $start_date_and_time = $request->query('start_date_and_time', '');
+                    $end_date_and_time = $request->query('end_date_and_time', '');
+
+                    $query_result = $this->db->table($this->table . " as pp")
+                        ->select(
+                            'pp.id',
+                            'pp.batch_number',
+                            'pp.product_id',
+                            'p.name',
+                            'pp.quantity',
+                            'pp.start_date_and_time',
+                            'pp.end_date_and_time',
+                            'pp.customer_name',
+                            'pp.status',
+                            'pp.is_archived'
+                        )
+                        ->leftJoin($this->table_products . ' as p', 'pp.product_id', '=', 'p.id')
+                        ->where('pp.batch_number', 'like', '%' . $search_keyword . '%')
+                        ->where(function ($query) use ($start_date_and_time, $end_date_and_time) {
+                            $query->whereBetween('pp.start_date_and_time', [$start_date_and_time, $end_date_and_time])
+                                ->orWhereBetween('pp.end_date_and_time', [$start_date_and_time, $end_date_and_time])
+                                ->orWhere(function ($query) use ($start_date_and_time, $end_date_and_time) {
+                                    $query->where('pp.start_date_and_time', '<=', $start_date_and_time)
+                                        ->where('pp.end_date_and_time', '>=', $end_date_and_time);
+                                });
+                        })
+                        ->get();
+                } else {
+                    return $this->response->errorResponse("search_keyword, start_date_and_time, and end_date_and_time must exist together");
+                }
+            } else {
                 $query_result = $this->db->table($this->table . " as pp")
                     ->select(
                         'pp.id',
                         'pp.batch_number',
                         'pp.product_id',
-                        'p.product_name',
+                        'p.name',
                         'pp.quantity',
                         'pp.start_date_and_time',
                         'pp.end_date_and_time',
@@ -175,12 +207,7 @@ class ApiController extends Controller {
                         'pp.status',
                         'pp.is_archived'
                     )
-                    ->leftJoin($this->table_products . ' as p', 'p.id', '=', 'pp.product_id')
-                    // **Search Condition**
-                    ->havingRaw("
-                                            p.product_name LIKE ?
-                                            OR pp.batch_number LIKE ?
-                                         ", ["%$search%", "%$search%"]) // Search keyword applied
+                    ->leftJoin($this->table_products . ' as p', 'pp.product_id', '=', 'p.id')
                     ->get();
             }
 
