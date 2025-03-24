@@ -201,6 +201,10 @@ class ApiController extends Controller {
                                     ->where('pp.end_date_and_time', '>=', $end_date_and_time);
                             });
                     });
+                } else if (!empty($start_date_and_time)) {
+                    $query_result->where('pp.start_date_and_time', '>=', $start_date_and_time);
+                } else if (!empty($end_date_and_time)) {
+                    $query_result->where('pp.end_date_and_time', '<=', $end_date_and_time);
                 }
 
                 if ($status !== '') {
@@ -235,17 +239,45 @@ class ApiController extends Controller {
     }
 
     public function post(Request $request) {
-
         $payload = $this->validation->validateRequest($request, $this->accepted_parameters, $this->required_fields);
-        //check if the $payload has error validation key
+
+        // Check if the $payload has an error validation key
         if (isset($payload['error_validation'])) {
-            $this->db->rollback();
             return $this->response->errorResponse($payload['message']);
         }
+
+        // Validate material_details array
+        if (isset($payload['material_details'])) {
+            if (!is_array($payload['material_details'])) {
+                return $this->response->errorResponse("Invalid material details format. It should be an array.");
+            }
+
+            foreach ($payload['material_details'] as $index => $md) {
+                if (
+                    !isset($md['material_id']) ||
+                    !isset($md['supplier_id']) ||
+                    !isset($md['description']) ||
+                    !isset($md['uom']) ||
+                    !isset($md['lot_number']) ||
+                    !isset($md['amount']) ||
+                    !isset($md['batch']) ||
+                    !isset($md['amount_issued_date_and_time']) ||
+                    !isset($md['pick_location'])
+                ) {
+                    return $this->response->errorResponse("Material details at index $index is missing required fields.");
+                }
+
+                // Validate amount_issued_date_and_time format
+                if (!strtotime($md['amount_issued_date_and_time'])) {
+                    return $this->response->errorResponse("Invalid date format for material details at index $index.");
+                }
+            }
+        }
+
         try {
             $this->db->beginTransaction();
 
-            $material_details = $payload['material_details'];
+            $material_details = $payload['material_details'] ?? [];
             $payload['status'] = 0;
             $payload['is_archived'] = 0;
 
@@ -257,13 +289,12 @@ class ApiController extends Controller {
                 $this->db->rollback();
                 return $this->response->errorResponse("Can't Save Data");
             } else {
-
                 foreach ($material_details as &$md) {
                     $md['production_plan_id'] = $payload['id'];
                 }
 
-                if (!$this->db->table($this->table_material_details)->insert($material_details)) {
-                    $this->db->rollbakc();
+                if (!empty($material_details) && !$this->db->table($this->table_material_details)->insert($material_details)) {
+                    $this->db->rollback();
                     return $this->response->errorResponse("Can't Save Material Details");
                 }
 
@@ -271,7 +302,7 @@ class ApiController extends Controller {
                     'production_plan_id' => $payload['id'],
                     'personnel_id' => $this->user_info->getUserId(),
                     'action' => $payload['status'],
-                    'date_and_time' => now()
+                    'date_and_time' => now()->format('Y-m-d H:i:s')
                 ];
 
                 $activity_logs_data['id'] = $this->db->table($this->table_activity_logs)->insertGetId($activity_logs_data);
@@ -280,6 +311,19 @@ class ApiController extends Controller {
                     $this->db->rollback();
                     return $this->response->errorResponse("Can't Save Activity Logs");
                 } else {
+                    foreach ($material_details as $md) {
+                        $activity_logs_data['material_details'][] = [
+                            'material_id' => $md['material_id'],
+                            'supplier_id' => $md['supplier_id'],
+                            'description' => $md['description'],
+                            'uom' => $md['uom'],
+                            'lot_number' => $md['lot_number'],
+                            'amount' => $md['amount'],
+                            'batch' => $md['batch'],
+                            'amount_issued_date_and_time' => $md['amount_issued_date_and_time'],
+                            'pick_location' => $md['pick_location']
+                        ];
+                    }
 
                     $payload['activity_logs'] = $activity_logs_data;
 
@@ -290,12 +334,13 @@ class ApiController extends Controller {
             }
         } catch (QueryException $e) {
             $this->db->rollback();
-            return $this->response->errorResponse($e);
+            return $this->response->errorResponse($e->getMessage());
         } catch (Exception $e) {
             $this->db->rollback();
-            return $this->response->errorResponse($e);
+            return $this->response->errorResponse($e->getMessage());
         }
     }
+
 
     public function put(Request $request, $id) {
 
@@ -337,7 +382,7 @@ class ApiController extends Controller {
                 "processing_id" => $id,
                 "action" => $edit_request['status'],
                 "user_id" => $this->user_info->getUserId(),
-                "date_time" => now()
+                'date_and_time' => now()->format('Y-m-d H:i:s')
             ];
 
             $activity_logs['id'] = $this->db->table($this->table_activity_logs)->insertGetId($activity_logs);
