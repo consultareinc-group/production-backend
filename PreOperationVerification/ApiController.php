@@ -468,21 +468,34 @@ class ApiController extends Controller
 
             if($payload['preoperation_verifications_inspections']){
                 foreach($payload['preoperation_verifications_inspections'] as $for_file){
-                    if(!$this->file->checkFile($for_file['sop_reference'])){
-                        $this->db->rollback();
-                        return $this->response->errorResponse('Invalid File Format');
+
+                    if(is_file($for_file['sop_reference'])){
+                        if(!$this->file->checkFile($for_file['sop_reference'])){
+                            $this->db->rollback();
+                            return $this->response->errorResponse('Invalid File Format');
+                        }
                     }
+                   
                 }
 
             }
 
+
+            $file_to_upload = [];
+
+            $file_to_delete = [];
+
             
             if(!empty($get_inspection_data)){
                 foreach($get_inspection_data as $inspection){
-                    if(!$this->file->deleteFile($inspection->sop_reference_generated_filename, $this)){
-                        $this->db->rollback();
-                        return $this->response->errorResponse("Can't Delete File!");
-                    }
+
+                    $file_to_delete[] = [
+                        'generated_filename' => $inspection->sop_reference_generated_filename
+                    ];
+                    // if(!$this->file->deleteFile($inspection->sop_reference_generated_filename, $this)){
+                    //     $this->db->rollback();
+                    //     return $this->response->errorResponse("Can't Delete File!");
+                    // }
                 }
             }
 
@@ -496,35 +509,73 @@ class ApiController extends Controller
             if($payload['preoperation_verifications_inspections']){
                 foreach($payload['preoperation_verifications_inspections'] as $povi){
 
-                    //get file
-                    $file = $povi['sop_reference'];
+                    $ins_d = [];
 
-                    //generate a filename
-                    $generated_filename = $this->file->generateUniqueFilename($this,$file->getClientOriginalName());
+                    if(!is_file($povi['sop_reference'])){
 
-                    if(!$this->file->saveFile($povi['sop_reference'], $generated_filename, $this)){
-                        return $this->response->errorResponse("Cant Upload File");
+                        foreach ($file_to_delete as $key => $f_t_d) {
+                            if ($f_t_d['generated_filename'] == $povi['sop_reference_generated_filename']) {
+                                unset($file_to_delete[$key]);
+                            }
+                        }
+                        
+
+                        $ins_d = [
+                            'preoperation_id' => $payload['id'],
+                            'inspection' => $povi['inspection'],
+                            'performed_by' => $povi['performed_by'],
+                            'performed_date_and_time' => (new DateTime($povi['performed_date_and_time']))->format('Y-m-d H:i:s'),
+                            'status' => $povi['status'],
+                            'sop_reference' => $povi['sop_reference'],
+                            'sop_reference_generated_filename' => $povi['sop_reference_generated_filename'],
+                            'verified_by' => $povi['verified_by'],
+                            'verified_date_and_time' => (new DateTime($povi['verified_date_and_time']))->format('Y-m-d H:i:s'),
+                            'observation' => isset($povi['observation'])?$povi['observation'] :null,
+                            'corrective_action' => isset($povi['corrective_action'])?$povi['corrective_action'] :null,
+                            'corrected_by' => isset($povi['corrected_by'])?$povi['corrected_by'] :null,
+                            'corrected_date_and_time' => isset($povi['corrected_date_and_time'])? (new DateTime($povi['corrected_date_and_time']))->format('Y-m-d H:i:s') :null,
+                        ];
+                    }   
+                    else{
+                        //get file
+                        $file = $povi['sop_reference'];
+
+                        //generate a filename
+                        $generated_filename = $this->file->generateUniqueFilename($this,$file->getClientOriginalName());
+
+                        $file_to_upload[] = [
+                            'generated_filename' => $generated_filename,
+                            'file' => $file
+                        ];
+
+                        // if(!$this->file->saveFile($povi['sop_reference'], $generated_filename, $this)){
+                        //     return $this->response->errorResponse("Cant Upload File");
+                        // }
+
+                        $ins_d = [
+                            'preoperation_id' => $payload['id'],
+                            'inspection' => $povi['inspection'],
+                            'performed_by' => $povi['performed_by'],
+                            'performed_date_and_time' => (new DateTime($povi['performed_date_and_time']))->format('Y-m-d H:i:s'),
+                            'status' => $povi['status'],
+                            'sop_reference' => $file->getClientOriginalName(),
+                            'sop_reference_generated_filename' => $generated_filename,
+                            'verified_by' => $povi['verified_by'],
+                            'verified_date_and_time' => (new DateTime($povi['verified_date_and_time']))->format('Y-m-d H:i:s'),
+                            'observation' => isset($povi['observation'])?$povi['observation'] :null,
+                            'corrective_action' => isset($povi['corrective_action'])?$povi['corrective_action'] :null,
+                            'corrected_by' => isset($povi['corrected_by'])?$povi['corrected_by'] :null,
+                            'corrected_date_and_time' => isset($povi['corrected_date_and_time'])? (new DateTime($povi['corrected_date_and_time']))->format('Y-m-d H:i:s') :null,
+
+                        ];
                     }
 
-                    $ins_d = [
-                        'preoperation_id' => $payload['id'],
-                        'inspection' => $povi['inspection'],
-                        'performed_by' => $povi['performed_by'],
-                        'performed_date_and_time' => (new DateTime($povi['performed_date_and_time']))->format('Y-m-d H:i:s'),
-                        'status' => $povi['status'],
-                        'sop_reference' => $file->getClientOriginalName(),
-                        'sop_reference_generated_filename' => $generated_filename,
-                        'verified_by' => $povi['verified_by'],
-                        'verified_date_and_time' => (new DateTime($povi['verified_date_and_time']))->format('Y-m-d H:i:s'),
-                        'observation' => isset($povi['observation'])?$povi['observation'] :null,
-                        'corrective_action' => isset($povi['corrective_action'])?$povi['corrective_action'] :null,
-                        'corrected_by' => isset($povi['corrected_by'])?$povi['corrected_by'] :null,
-                        'corrected_date_and_time' => isset($povi['corrected_date_and_time'])? (new DateTime($povi['corrected_date_and_time']))->format('Y-m-d H:i:s') :null,
-    
-                    ];
+                    
                     $inspection_data[] = $ins_d;
                 }
             }
+
+
 
             if($this->db->table($this->table_inspection)->insert($inspection_data)){
                 $this->db->commit();
