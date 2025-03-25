@@ -312,7 +312,7 @@ class ApiController extends Controller {
                     return $this->response->errorResponse("Can't Save Activity Logs");
                 } else {
                     foreach ($material_details as $md) {
-                        $activity_logs_data['material_details'][] = [
+                        $payload['material_details'][] = [
                             'material_id' => $md['material_id'],
                             'supplier_id' => $md['supplier_id'],
                             'description' => $md['description'],
@@ -379,7 +379,7 @@ class ApiController extends Controller {
 
 
             $activity_logs = [
-                "processing_id" => $id,
+                "production_plan_id" => $id,
                 "action" => $edit_request['status'],
                 "user_id" => $this->user_info->getUserId(),
                 'date_and_time' => now()->format('Y-m-d H:i:s')
@@ -468,11 +468,19 @@ class ApiController extends Controller {
                     $md['production_plan_id'] = $payload['id'];
                 }
 
-                if (!$this->db->table($this->table_material_details)->insert($material_details)) {
-                    $this->db->rollbakc();
+                if (!empty($material_details) && !$this->db->table($this->table_material_details)->insert($material_details)) {
+                    $this->db->rollback();
                     return $this->response->errorResponse("Can't Save Material Details");
                 }
+        
+
+                $this->db->commit();
+
+                $payload['material_details'] = $material_details;
+
+                return $this->response->buildApiResponse($payload, $this->response_column);            
             }
+
         } catch (QueryException $e) {
             $this->db->rollback();
             return $this->response->errorResponse($e);
