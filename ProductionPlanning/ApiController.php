@@ -99,6 +99,9 @@ class ApiController extends Controller {
     protected $response_column = [
         "id",
         "batch_number",
+        "product_name",
+        "material_name",
+        "supplier_name",
         "product_id",
         "description",
         "quantity",
@@ -119,6 +122,8 @@ class ApiController extends Controller {
     protected $table_material_details = 'production_material_details';
     protected $table_activity_logs = 'production_activity_logs';
     protected $table_products = 'products';
+    protected $table_supplier_material = 'supplier_material';
+    protected $table_supplier = 'supplier';
 
 
     public function get(Request $request, $id = null) {
@@ -229,6 +234,48 @@ class ApiController extends Controller {
                     ->leftJoin($this->table_products . ' as p', 'pp.product_id', '=', 'p.id')
                     ->get();
             }
+
+
+            if($request->has('product_name')){
+                $product_search = $request->query('product_name','');
+                $query_result = $this->db->table($this->table_products)
+                                            ->select(
+                                                'id',
+                                                'name as product_name' 
+                                                )
+                                            ->where('name', 'like', '%' . $product_search . '%')
+                                            ->get();
+
+
+            }
+
+            if($request->has('material_name')){
+                $material_search = $request->query('material_name','');
+                $query_result = $this->db->table($this->table_supplier_material)
+                                            ->select(
+                                                'id',
+                                                'material_name' 
+                                                )
+                                            ->where('material_name', 'like', '%' . $material_search . '%')
+                                            ->get();
+
+
+            }
+
+            if($request->has('supplier_name')){
+                $supplier_search = $request->query('supplier_name','');
+                $query_result = $this->db->table($this->table_supplier)
+                                            ->select(
+                                                'id',
+                                                'name as supplier_name' 
+                                                )
+                                            ->where('name', 'like', '%' . $supplier_search . '%')
+                                            ->get();
+
+            }
+
+            
+
 
             return $this->response->buildApiResponse($query_result, $this->response_column);
         } catch (QueryException $e) {
