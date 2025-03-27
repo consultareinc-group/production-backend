@@ -309,8 +309,16 @@ class ApiController extends Controller
                 "is_archived" => 0,
                 "is_deleted" => 0
             ];
+            //checks if there are existing data with production plan id
 
-            $payload['id'] = $this->db->table($this->table)->insertGetId($preoperation_data);
+            if(!$this->db->table($this->table)->where('production_id', $payload['production_id'])->exists()){
+                $payload['id'] = $this->db->table($this->table)->insertGetId($preoperation_data);
+            }
+            else{
+                $query = $this->db->table($this->table)->where('production_id', $payload['production_id'])->first();
+                $payload['id'] = $query->id;
+            }
+            
             
             if(!$payload['id']){
                 $this->db->rollback();
