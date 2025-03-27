@@ -5,19 +5,19 @@
  * replace the SystemName based on the Folder
  * 
 */
-namespace App\Http\Controllers\SystemName;
+namespace App\Http\Controllers\ProductionManagementSystem\CompoundingMixing;
 
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\ResponseHelper;
+use App\Helpers\ValidationHelper;
+use App\Helpers\UserInfoHelper;
+use App\Helpers\FileHelper;
+use DateTime;
 
-/**
- * 
- * replace the ApiController based on the module name + ApiController ex. moduleNameApiController
- * 
-*/
+
 class ApiController extends Controller
 {
     public const GET_PERMISSION_ALIAS = null;
@@ -33,16 +33,24 @@ class ApiController extends Controller
 
 
     protected $response;
+    protected $validation;
     protected $db;
+    protected $file;
+    protected $user_info;
+    protected $account;
     public function __construct(Request $request)
     {
+        $this->file = new FileHelper();
         $this->response = new ResponseHelper($request);
+        $this->validation = new ValidationHelper($request);
+        $this->user_info = new UserInfoHelper();
         /**
          * 
          *  Rename system_database_connection based on preferred database on database.php
          * 
         */
-        $this->db = DB::connection("system_database_connection");
+        $this->db = DB::connection("production_database_connection");
+        $this->account = DB::connection("accounts_connection");
     }
 
      /**
@@ -51,11 +59,28 @@ class ApiController extends Controller
      * 
      * */
     protected $accepted_parameters = [
-        "id", 
-        "accepted_parameter1",
-        "accepted_parameter2",
-        "search_keyword"
-        
+        "id",
+        "equipment_name",
+        "category_id",
+        "manufacturer",
+        "model_number",
+        "serial_number",
+        "purchase_date",
+        "purchase_price",
+        "supplier",
+        "warranty_expiration",
+        "condition",
+        "location",
+        "assigned_to",
+        "maintenance_schedule",
+        "status",
+        "description",
+        "equipment_image",
+        "safety_manual",
+        "operation_manual",
+        "maintenance_manual",
+        "search_keyword",
+        "activity_logs"
     ];
 
     /**
@@ -64,8 +89,17 @@ class ApiController extends Controller
      * 
      * */
     protected $required_fields = [
-        "id",
-        "accepted_parameter1", 
+       "equipment_number",
+       "equipment_name",
+       "category_id",
+       "manufacturer",
+       "model_number",
+       "serial_number",
+       "purchase_date",
+       "location",
+       "assigned_to",
+       "status",
+       "description"
     ];
 
     /**
@@ -75,8 +109,30 @@ class ApiController extends Controller
      * */
     protected $response_column = [
        "id",
-       "response_column1",
-       "response_column2",
+        "equipment_name",
+        "category_id",
+        "manufacturer",
+        "model_number",
+        "serial_number",
+        "purchase_date",
+        "purchase_price",
+        "supplier",
+        "warranty_expiration",
+        "condition",
+        "location",
+        "assigned_to",
+        "maintenance_schedule",
+        "status",
+        "description",
+        "equipment_image",
+        "equipment_image_geenrated_filename",
+        "safety_manual",
+        "safety_manual_generated_filename",
+        "operation_manual",
+        "operation_manual_generated_filename",
+        "maintenance_manual",
+        "maintenance_manual_generated_filename",
+        "activity_logs"
     ];
 
     /**
@@ -84,7 +140,11 @@ class ApiController extends Controller
      * modify table name
      * 
      * */
-    protected $table = 'table_name';
+    protected $table = 'equipments';
+    protected $table_category = 'category_lists';
+    protected $table_activity_logs = 'equipment_activity_logs';
+    protected $table_user_info = 'user_information';
+
 
 
 
